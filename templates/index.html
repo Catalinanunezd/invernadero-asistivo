@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invernadero Asistivo - Monitoreo Dinámico</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f1f5f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Encabezado */
+    .encabezado {
+      background: linear-gradient(135deg, #1e3a8a, #059669);
+      color: white;
+      padding: 22px;
+      border-radius: 0 0 20px 20px;
+      margin-bottom: 25px;
+    }
+
+    /* Barra Asistida de Voz */
+    .barra-voz {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 22px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .titulo-seccion {
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* TARJETAS DE LOS 4 PICTOGRAMAS MAESTROS */
+    .tarjeta-pictograma-maestro {
+      border-radius: 20px;
+      padding: 24px 15px;
+      text-align: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.07);
+      border: 5px solid #16a34a;
+      transition: all 0.3s ease;
+      min-height: 270px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Estados Bicolor: Verde (Óptimo) y Rojo (Alerta) */
+    .estado-verde {
+      background-color: #dcfce7 !important;
+      border-color: #16a34a !important;
+      color: #14532d !important;
+    }
+
+    .estado-rojo {
+      background-color: #fee2e2 !important;
+      border-color: #dc2626 !important;
+      color: #7f1d1d !important;
+      animation: pulsoAlerta 1.4s infinite;
+    }
+
+    @keyframes pulsoAlerta {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    .icono-svg-contenedor {
+      width: 75px;
+      height: 75px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icono-svg-contenedor svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+
+    .nombre-pictograma {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .estado-accion-texto {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+
+    /* BOTONES DE NAVEGACIÓN ENTRE SECTORES */
+    .grupo-botones-navegacion {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+
+    .btn-sector {
+      font-size: 1.15rem;
+      font-weight: 700;
+      padding: 12px 28px;
+      border-radius: 12px;
+      color: #334155;
+      background: white;
+      border: 2px solid #cbd5e1;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+
+    .btn-sector.activo {
+      background-color: #1e3a8a !important;
+      color: white !important;
+      border-color: #1e3a8a !important;
+    }
+
+    /* TARJETAS DE DETALLE */
+    .tarjeta-detalle {
+      border-radius: 18px;
+      padding: 24px 20px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      text-align: center;
+      background-color: #ffffff;
+    }
+
+    /* BORDES COMPLETOS DE COLOR */
+    .borde-cajon-azul {
+      border: 4px solid #2563eb !important;
+      background-color: #f8faff;
+    }
+
+    .borde-cajon-centro {
+      border: 4px solid #059669 !important;
+      background-color: #f7fdfa;
+    }
+
+    .borde-cajon-morado {
+      border: 4px solid #9333ea !important;
+      background-color: #faf5ff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ENCABEZADO -->
+  <div class="encabezado text-center shadow">
+    <h1 class="fw-bold">🌱 Invernadero Asistivo Inclusivo</h1>
+    <p class="mb-0 fs-5">Monitoreo en Tiempo Real con Asistencia de Voz Adaptada</p>
+  </div>
+
+  <div class="container pb-5">
+
+    <!-- BARRA ASISTIDA DE VOZ -->
+    <div class="barra-voz">
+      <div>
+        <span class="fs-4">📢</span>
+        <strong class="fs-5 ms-2">Instrucción Asistida:</strong>
+        <span id="texto-asistente" class="text-secondary fw-bold ms-2">Iniciando sistema de monitoreo...</span>
+      </div>
+      <button class="btn btn-primary fw-bold px-4 py-2 shadow-sm" onclick="repetirVoz()">
+        🔊 Repetir Instrucción
+      </button>
+    </div>
+
+    <!-- SECCIÓN: LOS 4 PICTOGRAMAS MAESTROS -->
+    <div class="titulo-seccion">
+      <span class="fs-3">🚦</span>
+      <h2 class="h3 fw-bold mb-0">Estado General de los 4 Pictogramas</h2>
+    </div>
+
+    <div class="row g-4 mb-5">
+      
+      <!-- 1. PICTOGRAMA DE RIEGO -->
+      <div class="col-md-3 col-sm-6">
+        <div id="pic-riego" class="tarjeta-pictograma-maestro estado-verde">
+          <div class="icono-svg-contenedor">
+            <svg viewBox="0 0 64 64">
+              <path d="M12 26 h26 l4 24 h-26 z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+              <path d="M14 26 C14 14, 36 14, 36 26" fill="none" stroke="currentColor" stroke-width="4"/>
+              <path d="M12 30 C4 30, 4 46, 14 48" fill="none" stroke="currentColor" stroke-width="4"/>
+              <path d="M38 34 L54 22" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+              <path d="M52 18 L58 26" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="60" cy="28" r="2"/>
+              <circle cx="56" cy="33" r="2"/>
+              <circle cx="61" cy="38" r="2"/>
+            </svg>
+          </div>
+          <div class="nombre-pictograma">1. Riego</div>
+          <p class="estado-accion-texto" id="pic-riego-txt">Humedad Correcta</p>
+        </div>
+      </div>
+
+      <!-- 2. PICTOGRAMA TEMPERATURA AMBIENTE -->
+      <div class="col-md-3 col-sm-6">
+        <div id="pic-temp-aire" class="tarjeta-pictograma-maestro estado-verde">
+          <div class="icono-svg-contenedor">
+            <svg viewBox="0 0 64 64">
+              <rect x="27" y="10" width="10" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="4"/>
+              <circle cx="32" cy="46" r="10" fill="none" stroke="currentColor" stroke-width="4"/>
+              <circle cx="32" cy="46" r="6"/>
+              <rect x="29" y="24" width="6" height="18" rx="3"/>
+              <line x1="42" y1="16" x2="48" y2="16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <line x1="42" y1="23" x2="48" y2="23" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <line x1="42" y1="30" x2="48" y2="30" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="nombre-pictograma">2. Temp. Aire</div>
+          <p class="estado-accion-texto" id="pic-temp-aire-txt">Ambiente Templado</p>
+        </div>
+      </div>
+
+      <!-- 3. PICTOGRAMA VENTILACIÓN Y GASES -->
+      <div class="col-md-3 col-sm-6">
+        <div id="pic-gases" class="tarjeta-pictograma-maestro estado-verde">
+          <div class="icono-svg-contenedor">
+            <svg viewBox="0 0 64 64">
+              <rect x="10" y="12" width="44" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="4"/>
+              <polygon points="14,16 38,20 38,44 14,48" fill="none" stroke="currentColor" stroke-width="3"/>
+              <line x1="14" y1="32" x2="38" y2="32" stroke="currentColor" stroke-width="3"/>
+              <path d="M42 22 Q48 20 52 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <path d="M40 32 Q49 30 54 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <path d="M42 42 Q47 40 51 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="nombre-pictograma">3. Ventilación</div>
+          <p class="estado-accion-texto" id="pic-gases-txt">Aire Limpio</p>
+        </div>
+      </div>
+
+      <!-- 4. PICTOGRAMA TEMPERATURA DE TIERRA -->
+      <div class="col-md-3 col-sm-6">
+        <div id="pic-tierra" class="tarjeta-pictograma-maestro estado-verde">
+          <div class="icono-svg-contenedor">
+            <svg viewBox="0 0 64 64">
+              <line x1="8" y1="46" x2="56" y2="46" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+              <path d="M26 46 V28" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+              <path d="M26 34 C16 32, 14 22, 26 22 C26 28, 24 34, 26 34 Z"/>
+              <path d="M26 28 C34 26, 36 16, 26 16 C24 22, 26 28, 26 28 Z"/>
+              <rect x="42" y="30" width="6" height="26" rx="3" fill="none" stroke="currentColor" stroke-width="3"/>
+              <circle cx="45" cy="54" r="3"/>
+              <path d="M45 30 V22 Q48 18 52 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="nombre-pictograma">4. Temp. Tierra</div>
+          <p class="estado-accion-texto" id="pic-tierra-txt">Sustrato Templado</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN: BOTONES DE NAVEGACIÓN -->
+    <div class="titulo-seccion">
+      <span class="fs-3">📊</span>
+      <h2 class="h3 fw-bold mb-0">Detalle de Mediciones por Sector</h2>
+    </div>
+
+    <div class="grupo-botones-navegacion">
+      <button id="btn-sec-cajon1" class="btn-sector activo" onclick="mostrarSector('vista-cajon1', 'btn-sec-cajon1')">
+        📦 Cajón 1
+      </button>
+      <button id="btn-sec-cajon2" class="btn-sector" onclick="mostrarSector('vista-cajon2', 'btn-sec-cajon2')">
+        📦 Cajón 2
+      </button>
+      <button id="btn-sec-aire" class="btn-sector" onclick="mostrarSector('vista-aire', 'btn-sec-aire')">
+        ☁️ Techo y Sensores
+      </button>
+    </div>
+
+    <!-- PANELES DE DETALLE -->
+    <!-- CAJÓN 1 -->
+    <div id="vista-cajon1" style="display: block;">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="tarjeta-detalle borde-cajon-azul">
+            <h4 class="fw-bold text-primary mb-1">Zona Azul (0 a 1m)</h4>
+            <p class="display-5 fw-bold my-2 text-primary" id="c1-azul-val">-- %</p>
+            <span class="badge bg-primary fs-6 px-3 py-2">Capacitivo v2.0</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="tarjeta-detalle borde-cajon-centro">
+            <h4 class="fw-bold text-success mb-1">Centro (Sustrato)</h4>
+            <p class="display-5 fw-bold my-2 text-success" id="c1-tierra-val">-- °C</p>
+            <span class="badge bg-success fs-6 px-3 py-2">Sonda DS18B20</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="tarjeta-detalle borde-cajon-morado">
+            <h4 class="fw-bold mb-1" style="color: #9333ea;">Zona Morada (1 a 2m)</h4>
+            <p class="display-5 fw-bold my-2" style="color: #9333ea;" id="c1-morado-val">-- %</p>
+            <span class="badge fs-6 px-3 py-2" style="background-color: #9333ea;">HD-38 Inox</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAJÓN 2 -->
+    <div id="vista-cajon2" style="display: none;">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="tarjeta-detalle borde-cajon-azul">
+            <h4 class="fw-bold text-primary mb-1">Zona Azul (0 a 1m)</h4>
+            <p class="display-5 fw-bold my-2 text-primary" id="c2-azul-val">-- %</p>
+            <span class="badge bg-primary fs-6 px-3 py-2">Capacitivo v2.0</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="tarjeta-detalle borde-cajon-centro">
+            <h4 class="fw-bold text-success mb-1">Centro (Sustrato)</h4>
+            <p class="display-5 fw-bold my-2 text-success" id="c2-tierra-val">-- °C</p>
+            <span class="badge bg-success fs-6 px-3 py-2">Sonda DS18B20</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="tarjeta-detalle borde-cajon-morado">
+            <h4 class="fw-bold mb-1" style="color: #9333ea;">Zona Morada (1 a 2m)</h4>
+            <p class="display-5 fw-bold my-2" style="color: #9333ea;" id="c2-morado-val">-- %</p>
+            <span class="badge fs-6 px-3 py-2" style="background-color: #9333ea;">YL-69</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECHO Y SENSORES -->
+    <div id="vista-aire" style="display: none;">
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card p-4 shadow-sm border-0 rounded-4 bg-white">
+            <h4 class="fw-bold text-primary mb-3">📍 Techo Adelante</h4>
+            <p class="fs-5 mb-2">Temperatura: <strong id="aire-adelante-temp">--</strong> °C</p>
+            <p class="fs-5 mb-2">Humedad: <strong id="aire-adelante-hum">--</strong> %</p>
+            <p class="fs-5 mb-0">Monóxido de Carbono (MQ-7): <strong id="aire-adelante-co">--</strong> ppm</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card p-4 shadow-sm border-0 rounded-4 bg-white">
+            <h4 class="fw-bold text-primary mb-3">📍 Techo Atrás</h4>
+            <p class="fs-5 mb-2">Temperatura: <strong id="aire-atras-temp">--</strong> °C</p>
+            <p class="fs-5 mb-2">Humedad: <strong id="aire-atras-hum">--</strong> %</p>
+            <p class="fs-5 mb-2">Monóxido de Carbono (MQ-7): <strong id="aire-atras-co">--</strong> ppm</p>
+            <p class="fs-5 mb-0">Dióxido de Carbono (SCD-30): <strong id="aire-atras-co2">--</strong> ppm</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT: LÓGICA DE TIEMPO REAL CON SILENCIO TOTAL EN ESTADO VERDE -->
+  <script>
+    let ultimaFraseHablada = "";
+    let tiempoUltimaVoz = 0;
+    const INTERVALO_ESPERA_VOZ_MS = 18000; // 18 segundos de descanso antes de repetir
+
+    // CONFIGURACIÓN DE TIEMPOS PARA OPCIÓN 2 (Frío + Gases)
+    const TIEMPO_VENTILACION_SEG = 300; // 5 minutos de ventilación
+    const TIEMPO_PAUSA_CALOR_SEG = 180; // 3 minutos de pausa de calor
+
+    let estadoFrio = "REPOSO";
+    let inicioFaseActual = null;
+
+    // 1. NAVEGACIÓN MANUAL ENTRE SECTORES
+    function mostrarSector(idVistaMostrar, idBotonActivar) {
+      document.getElementById('vista-cajon1').style.display = 'none';
+      document.getElementById('vista-cajon2').style.display = 'none';
+      document.getElementById('vista-aire').style.display = 'none';
+
+      document.getElementById('btn-sec-cajon1').classList.remove('activo');
+      document.getElementById('btn-sec-cajon2').classList.remove('activo');
+      document.getElementById('btn-sec-aire').classList.remove('activo');
+
+      const vista = document.getElementById(idVistaMostrar);
+      const boton = document.getElementById(idBotonActivar);
+      if (vista) vista.style.display = 'block';
+      if (boton) boton.classList.add('activo');
+    }
+
+    // 2. FUNCIÓN DE VOZ ASISTIDA PROTEGIDA
+    function hablarConEspera(fraseAlerta) {
+      const ahora = Date.now();
+      const esNuevaFrase = (fraseAlerta !== ultimaFraseHablada);
+      const pasoTiempoSuficiente = (ahora - tiempoUltimaVoz > INTERVALO_ESPERA_VOZ_MS);
+
+      if ('speechSynthesis' in window && (esNuevaFrase || pasoTiempoSuficiente)) {
+        window.speechSynthesis.cancel();
+        const locucion = new SpeechSynthesisUtterance(fraseAlerta);
+        locucion.lang = 'es-ES';
+        locucion.rate = 0.9;
+        window.speechSynthesis.resume();
+        window.speechSynthesis.speak(locucion);
+
+        ultimaFraseHablada = fraseAlerta;
+        tiempoUltimaVoz = ahora;
+        escribirSeguro('texto-asistente', fraseAlerta);
+      }
+    }
+
+    // Botón de repetición manual
+    function repetirVoz() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        // Si hay una alerta activa previa, la repite; si todo está normal, no suena
+        if (ultimaFraseHablada !== "") {
+          const locucion = new SpeechSynthesisUtterance(ultimaFraseHablada);
+          locucion.lang = 'es-ES';
+          locucion.rate = 0.9;
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(locucion);
+        } else {
+          // Si todo está verde y pulsan el botón, solo actualiza el texto visualmente sin emitir sonido molesto
+          escribirSeguro('texto-asistente', "Todas las condiciones se encuentran óptimas.");
+        }
+      } else {
+        alert("El navegador no soporta síntesis de voz.");
+      }
+    }
+
+    function escribirSeguro(idElemento, texto) {
+      const el = document.getElementById(idElemento);
+      if (el) el.innerText = texto;
+    }
+
+    function pintarPictograma(idCard, idTxt, enAlerta, textoAlerta, textoNormal) {
+      const card = document.getElementById(idCard);
+      const txt = document.getElementById(idTxt);
+      if (!card || !txt) return;
+
+      if (enAlerta) {
+        card.classList.remove('estado-verde');
+        card.classList.add('estado-rojo');
+        txt.innerText = textoAlerta;
+      } else {
+        card.classList.remove('estado-rojo');
+        card.classList.add('estado-verde');
+        txt.innerText = textoNormal;
+      }
+    }
+
+    // 3. CONSTRUCTOR DE MENSAJES MULTIALERTA (1, 2, 3 Y 4 ALERTAS)
+    function construirMensajeMultialerta(tareas) {
+      const cantidad = tareas.length;
+
+      if (cantidad === 0) {
+        return ""; // Silencio total
+      }
+      if (cantidad === 1) {
+        return "Atención: Por favor, " + tareas[0] + ".";
+      }
+      if (cantidad === 2) {
+        return "Atención: Primero, " + tareas[0] + ". Además, " + tareas[1] + ".";
+      }
+      if (cantidad === 3) {
+        return "Atención: Hay tres tareas importantes. Primero, " + tareas[0] + ". Segundo, " + tareas[1] + ". Y por último, " + tareas[2] + ".";
+      }
+      return "¡Atención general! Hay varias cosas por revisar. Primero, " + tareas[0] + ". Segundo, " + tareas[1] + ". Tercero, " + tareas[2] + ". Y por último, " + tareas[3] + ".";
+    }
+
+    // 4. ACTUALIZACIÓN PERIÓDICA EN TIEMPO REAL
+    async function actualizarTelemetria() {
+      try {
+        const respuesta = await fetch('/api/estado_actual');
+        if (!respuesta.ok) return;
+
+        const data = await respuesta.json();
+        const c1 = data.cajon1;
+        const c2 = data.cajon2;
+        const aire = data.aire;
+
+        const tareasActivas = [];
+
+        // -------------------------------------------------------------
+        // A. EVALUAR PICTOGRAMA DE VENTILACIÓN Y GASES (PRIORIDAD 1)
+        // -------------------------------------------------------------
+        const tempPromedio = aire.temp_promedio;
+        const esCalor = tempPromedio > 28.0;
+        const esFrio  = tempPromedio < 15.0;
+        const hayGases = aire.alerta_ventilacion_gases;
+
+        if (esFrio && hayGases) {
+          if (estadoFrio === "REPOSO") {
+            estadoFrio = "VENTILANDO";
+            inicioFaseActual = Date.now();
+          }
+
+          const segTranscurridos = Math.floor((Date.now() - inicioFaseActual) / 1000);
+
+          if (estadoFrio === "VENTILANDO") {
+            const segRestantes = Math.max(0, TIEMPO_VENTILACION_SEG - segTranscurridos);
+            const min = String(Math.floor(segRestantes / 60)).padStart(2, '0');
+            const seg = String(segRestantes % 60).padStart(2, '0');
+
+            if (segRestantes > 0) {
+              pintarPictograma('pic-gases', 'pic-gases-txt', true, `Ventilando: quedan ${min}:${seg}`, "Aire Limpio");
+              tareasActivas.push("abrir las ventanas durante cinco minutos para ventilar el frío");
+            } else {
+              estadoFrio = "PAUSA_CALOR";
+              inicioFaseActual = Date.now();
+              tareasActivas.push("cerrar las ventanas tres minutos para recuperar calor");
+            }
+
+          } else if (estadoFrio === "PAUSA_CALOR") {
+            const segRestantesPausa = Math.max(0, TIEMPO_PAUSA_CALOR_SEG - segTranscurridos);
+            const minP = String(Math.floor(segRestantesPausa / 60)).padStart(2, '0');
+            const segP = String(segRestantesPausa % 60).padStart(2, '0');
+
+            if (segRestantesPausa > 0) {
+              pintarPictograma('pic-gases', 'pic-gases-txt', true, `Pausa de calor: ${minP}:${segP}`, "Aire Limpio");
+              tareasActivas.push("mantener las ventanas cerradas para cuidar las plantas del frío");
+            } else {
+              estadoFrio = "VENTILANDO";
+              inicioFaseActual = Date.now();
+              tareasActivas.push("abrir nuevamente las ventanas para un nuevo ciclo de ventilación");
+            }
+          }
+
+        } else {
+          if (estadoFrio !== "REPOSO" && !hayGases) {
+            estadoFrio = "REPOSO";
+            inicioFaseActual = null;
+          }
+
+          if (esCalor && hayGases) {
+            pintarPictograma('pic-gases', 'pic-gases-txt', true, "¡Abrir Ventanas!", "Aire Limpio");
+            tareasActivas.push("abrir todas las ventanas de inmediato por calor y gases");
+          } else if (esCalor && !hayGases) {
+            pintarPictograma('pic-gases', 'pic-gases-txt', false, "¡Abrir Ventanas!", "Ventilar por Calor");
+          } else if (esFrio && !hayGases) {
+            pintarPictograma('pic-gases', 'pic-gases-txt', false, "¡Abrir Ventanas!", "Ventanas Cerradas");
+          } else {
+            pintarPictograma('pic-gases', 'pic-gases-txt', false, "¡Abrir Ventanas!", "Aire Limpio");
+          }
+        }
+
+        // -------------------------------------------------------------
+        // B. EVALUAR PICTOGRAMA DE TEMPERATURA AMBIENTE (PRIORIDAD 2)
+        // -------------------------------------------------------------
+        if (esCalor) {
+          pintarPictograma('pic-temp-aire', 'pic-temp-aire-txt', true, `¡Calor Alto! (${tempPromedio} °C)`, `Templado (${tempPromedio} °C)`);
+          tareasActivas.push("hace calor, abrir las ventanas para refrescar el invernadero");
+        } else if (esFrio) {
+          pintarPictograma('pic-temp-aire', 'pic-temp-aire-txt', true, `¡Ambiente Frío! (${tempPromedio} °C)`, `Templado (${tempPromedio} °C)`);
+          if (!hayGases) {
+            tareasActivas.push("hace frío, mantener las ventanas cerradas para conservar el calor");
+          }
+        } else {
+          pintarPictograma('pic-temp-aire', 'pic-temp-aire-txt', false, `¡Alerta Térmica! (${tempPromedio} °C)`, `Templado (${tempPromedio} °C)`);
+        }
+
+        // -------------------------------------------------------------
+        // C. EVALUAR PICTOGRAMA DE RIEGO (PRIORIDAD 3)
+        // -------------------------------------------------------------
+        let alertaRiego = c1.alerta_azul || c1.alerta_morado || c2.alerta_azul || c2.alerta_morado;
+        let txtRiego = "Humedad Correcta";
+
+        if (c1.alerta_azul) {
+          txtRiego = "¡Regar Cajón 1 - Azul!";
+          tareasActivas.push("regar la zona azul del cajón número uno");
+        } else if (c1.alerta_morado) {
+          txtRiego = "¡Regar Cajón 1 - Morado!";
+          tareasActivas.push("regar la zona morada del cajón número uno");
+        } else if (c2.alerta_azul) {
+          txtRiego = "¡Regar Cajón 2 - Azul!";
+          tareasActivas.push("regar la zona azul del cajón número dos");
+        } else if (c2.alerta_morado) {
+          txtRiego = "¡Regar Cajón 2 - Morado!";
+          tareasActivas.push("regar la zona morada del cajón número dos");
+        }
+        pintarPictograma('pic-riego', 'pic-riego-txt', alertaRiego, txtRiego, "Humedad Correcta");
+
+        // -------------------------------------------------------------
+        // D. EVALUAR PICTOGRAMA DE TEMPERATURA DE TIERRA (PRIORIDAD 4)
+        // -------------------------------------------------------------
+        let alertaTierra = c1.alerta_sustrato || c2.alerta_sustrato;
+        if (c1.alerta_sustrato) {
+          tareasActivas.push("revisar la temperatura de la tierra en el cajón número uno");
+        } else if (c2.alerta_sustrato) {
+          tareasActivas.push("revisar la temperatura de la tierra en el cajón número dos");
+        }
+        pintarPictograma('pic-tierra', 'pic-tierra-txt', alertaTierra, "¡Alerta en Sustrato!", "Sustrato Templado");
+
+        // -------------------------------------------------------------
+        // E. SÍNTESIS DE VOZ: SILENCIO TOTAL EN ESTADO VERDE
+        // -------------------------------------------------------------
+        if (tareasActivas.length === 0) {
+          // ESTADO ÓPTIMO: No se reproduce ninguna voz
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // Silencia de inmediato si venía hablando
+          }
+          ultimaFraseHablada = "";
+          escribirSeguro('texto-asistente', "Todas las condiciones se encuentran óptimas.");
+        } else {
+          // HAY ALERTAS ACTIVAS EN ROJO: Construye y reproduce la frase ordenada
+          const mensajeFinalVoz = construirMensajeMultialerta(tareasActivas);
+          hablarConEspera(mensajeFinalVoz);
+        }
+
+        // -------------------------------------------------------------
+        // F. ESCRITURA DE DATOS NUMÉRICOS VIVOS
+        // -------------------------------------------------------------
+        escribirSeguro('c1-azul-val', c1.humedad_azul + " %");
+        escribirSeguro('c1-morado-val', c1.humedad_morado + " %");
+        escribirSeguro('c1-tierra-val', c1.temp_sustrato + " °C");
+
+        escribirSeguro('c2-azul-val', c2.humedad_azul + " %");
+        escribirSeguro('c2-morado-val', c2.humedad_morado + " %");
+        escribirSeguro('c2-tierra-val', c2.temp_sustrato + " °C");
+
+        escribirSeguro('aire-adelante-temp', aire.adelante.temp_ambiente);
+        escribirSeguro('aire-adelante-hum', aire.adelante.humedad_ambiente);
+        escribirSeguro('aire-adelante-co', aire.adelante.co_mq7);
+
+        escribirSeguro('aire-atras-temp', aire.atras.temp_ambiente);
+        escribirSeguro('aire-atras-hum', aire.atras.humedad_ambiente);
+        escribirSeguro('aire-atras-co', aire.atras.co_mq7);
+        escribirSeguro('aire-atras-co2', (aire.atras.co2_scd30 !== null) ? aire.atras.co2_scd30 : "--");
+
+      } catch (error) {
+        console.error("Error al actualizar telemetría:", error);
+      }
+    }
+
+    actualizarTelemetria();
+    setInterval(actualizarTelemetria, 2000);
+  </script>
+</body>
+</html>
